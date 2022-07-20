@@ -34,7 +34,7 @@ spring:
       config:
         enabled: true
         serverType: kie
-        serverAddr: http://127.0.0.1:30110
+        serverAddr: http://127.0.0.1:30113
         firstPullRequired: false
 
       # testing spring cloud swagger generation

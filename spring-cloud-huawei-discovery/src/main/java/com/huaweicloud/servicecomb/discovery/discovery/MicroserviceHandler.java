@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.apache.commons.configuration.EnvironmentConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +55,10 @@ public class MicroserviceHandler {
   private static final String CAS_INSTANCE_ID = "CAS_INSTANCE_ID";
 
   private static final String CAS_ENVIRONMENT_ID = "CAS_ENVIRONMENT_ID";
+
+  private static final String SERVICE_PROPS = "SERVICECOMB_SERVICE_PROPS";
+
+  private static final String INSTANCE_PROPS = "SERVICECOMB_INSTANCE_PROPS";
 
   public static Microservice createMicroservice(DiscoveryBootstrapProperties discoveryBootstrapProperties) {
     Microservice microservice = new Microservice();
@@ -87,6 +93,12 @@ public class MicroserviceHandler {
     if (discoveryBootstrapProperties.isAllowCrossApp()) {
       microservice.getProperties().put(DiscoveryConstants.CONFIG_ALLOW_CROSS_APP_KEY, "true");
     }
+
+    if (!StringUtils.isEmpty(envConfig.getString(SERVICE_PROPS)) &&
+            !StringUtils.isEmpty(envConfig.getString(envConfig.getString(SERVICE_PROPS)))) {
+      microservice.getProperties().putAll(parseProps(envConfig.getString(envConfig.getString(SERVICE_PROPS))));
+    }
+
     microservice.setStatus(MicroserviceStatus.UP);
     return microservice;
   }
@@ -143,6 +155,7 @@ public class MicroserviceHandler {
     if (tagsProperties.getTag() != null) {
       properties.putAll(tagsProperties.getTag());
     }
+
     properties.putAll(genCasProperties());
     microserviceInstance.setProperties(properties);
     return microserviceInstance;
@@ -166,6 +179,22 @@ public class MicroserviceHandler {
     if (!StringUtils.isEmpty(envConfig.getString(CAS_ENVIRONMENT_ID))) {
       properties.put(CAS_ENVIRONMENT_ID, envConfig.getString(CAS_ENVIRONMENT_ID));
     }
+
+    if (!StringUtils.isEmpty(envConfig.getString(INSTANCE_PROPS)) &&
+            !StringUtils.isEmpty(envConfig.getString(envConfig.getString(INSTANCE_PROPS)))) {
+      properties.putAll(parseProps(envConfig.getString(envConfig.getString(INSTANCE_PROPS))));
+    }
+
     return properties;
+  }
+
+  private static Map<String, String> parseProps(String value) {
+    Map<String, String> rs = new HashMap<>();
+    if (StringUtils.isEmpty(value)) {
+      return rs;
+    }
+    return Arrays.stream(value.split(",")).map(v -> v.split(":"))
+            .filter(v -> v.length == 2)
+            .collect(Collectors.toMap(v -> v[0], v -> v[1]));
   }
 }
